@@ -1,54 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { sendError } from '../utils/response';
+import { Schema } from 'joi';
+import { ResponseHelper } from '../utils/response';
 
-export const validate = (schema: z.ZodSchema) => {
-  return (req: Request, res: Response, next: NextFunction): void | Response => {
-    try {
-      schema.parse(req.body);
-      next();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errorMessages = error.issues.map((err: any) => 
-          `${err.path.join('.')}: ${err.message}`
-        ).join(', ');
-        return sendError(res, 'Validation failed', errorMessages, 400);
-      }
-      return sendError(res, 'Invalid request data', undefined, 400);
-    }
-  };
-};
+export const validate = (schema: Schema) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const { error } = schema.validate(req.body);
 
-export const validateParams = (schema: z.ZodSchema) => {
-  return (req: Request, res: Response, next: NextFunction): void | Response => {
-    try {
-      schema.parse(req.params);
-      next();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errorMessages = error.issues.map((err: any) => 
-          `${err.path.join('.')}: ${err.message}`
-        ).join(', ');
-        return sendError(res, 'Invalid parameters', errorMessages, 400);
-      }
-      return sendError(res, 'Invalid request parameters', undefined, 400);
+    if (error) {
+      const errorMessage = error.details[0].message;
+      ResponseHelper.error(res, errorMessage, 400);
+      return;
     }
-  };
-};
 
-export const validateQuery = (schema: z.ZodSchema) => {
-  return (req: Request, res: Response, next: NextFunction): void | Response => {
-    try {
-      schema.parse(req.query);
-      next();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const errorMessages = error.issues.map((err: any) => 
-          `${err.path.join('.')}: ${err.message}`
-        ).join(', ');
-        return sendError(res, 'Invalid query parameters', errorMessages, 400);
-      }
-      return sendError(res, 'Invalid query parameters', undefined, 400);
-    }
+    next();
   };
 };

@@ -1,122 +1,97 @@
-import express, { Application } from 'express';
+import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import cookieParser from 'cookie-parser';
-import { config } from './config';
-import connectDatabase from './config/database';
-import { errorHandler, notFoundHandler } from './middlewares/error';
+import mongoSanitize from 'express-mongo-sanitize';
+import dotenv from 'dotenv';
+import { connectDatabase } from './config/database';
+import { globalErrorHandler } from './middlewares/errorHandler';
+import authRoutes from './modules/auth/authRoutes';
+import driverRoutes from './modules/driver/driverRoutes';
+import rideRoutes from './modules/ride/rideRoutes';
 
-import authRoutes from './modules/auth/auth.routes';
-import userRoutes from './modules/user/user.routes';
-import driverRoutes from './modules/driver/driver.routes';
-import rideRoutes from './modules/ride/ride.routes';
-import adminRoutes from './modules/admin/admin.routes';
 
-class App {
-  public app: Application;
+dotenv.config();
 
-  constructor() {
-    this.app = express();
-    this.connectToDatabase();
-    this.initializeMiddlewares();
-    this.initializeRoutes();
-    this.initializeErrorHandling();
-  }
+const app = express();
 
-  private async connectToDatabase(): Promise<void> {
-    await connectDatabase();
-  }
 
-  private initializeMiddlewares(): void {
-    // Security middleware
-    this.app.use(helmet());
-    
-    // CORS
-    this.app.use(cors({
-      origin: config.cors.origin,
-      credentials: true,
-    }));
+connectDatabase();
 
-    // Rate limiting
-    const limiter = rateLimit({
-      windowMs: config.rateLimit.windowMs,
-      max: config.rateLimit.maxRequests,
-      message: {
-        success: false,
-        message: 'Too many requests from this IP, please try again later.',
-        timestamp: new Date().toISOString(),
-      },
-    });
-    this.app.use(limiter);
+app.use(helmet());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true
+}));
 
-    // Body parsing middleware
-    this.app.use(express.json({ limit: '10mb' }));
-    this.app.use(express.urlencoded({ extended: true }));
-    this.app.use(cookieParser());
 
-    // Logging
-    if (config.nodeEnv === 'development') {
-      this.app.use(morgan('dev'));
-    } else {
-      this.app.use(morgan('combined'));
-    }
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
+  message: 'Too many requests from this IP, please try again later.'
+});
+app.use(limiter);
 
-    // Health check endpoint
-    this.app.get('/health', (req, res) => {
-      res.status(200).json({
-        success: true,
-        message: 'Ride Booking API is running',
-        timestamp: new Date().toISOString(),
-        environment: config.nodeEnv,
-      });
-    });
-  }
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-  private initializeRoutes(): void {
-    // API routes
-    this.app.use('/api/auth', authRoutes);
-    this.app.use('/api/users', userRoutes);
-    this.app.use('/api/drivers', driverRoutes);
-    this.app.use('/api/rides', rideRoutes);
-    this.app.use('/api/admin', adminRoutes);
 
-    // Welcome route
-    this.app.get('/', (req, res) => {
-      res.status(200).json({
-        success: true,
-        message: 'Welcome to Ride Booking API',
-        version: '1.0.0',
-        endpoints: {
-          auth: '/api/auth',
-          users: '/api/users',
-          drivers: '/api/drivers',
-          rides: '/api/rides',
-          admin: '/api/admin',
-          health: '/health',
-        },
-        timestamp: new Date().toISOString(),
-      });
-    });
-  }
+app.use(mongoSanitize());
 
-  private initializeErrorHandling(): void {
-    // 404 handler
-    this.app.use(notFoundHandler);
-    
-    // Global error handler
-    this.app.use(errorHandler);
-  }
 
-  public listen(): void {
-    this.app.listen(config.port, () => {
-      console.log(`🚀 Server running on port ${config.port}`);
-      console.log(`🌟 Environment: ${config.nodeEnv}`);
-      console.log(`📊 Health check: http://localhost:${config.port}/health`);
-      console.log(`📘 API Base URL: http://localhost:${config.port}/api`);
-    });
-  }
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
 }
 
-export default App;
+
+// Welcome route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Welcome to our Ride Sharing App! 🚗',
+    description: 'A secure, scalable, and role-based backend API for ride booking',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      auth: '/api/v1/auth',
+      rides: '/api/v1/rides',
+      drivers: '/api/v1/drivers',
+      admin: '/api/v1/admin'
+    },
+    documentation: 'See README.md for complete API documentation',
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Ride Booking API is running!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/drivers', driverRoutes);
+app.use('/api/v1/rides', rideRoutes);
+
+
+app.all('*', (req, res) => {
+  res.status(404).json({
+    status: 'error',
+    message: `Route ${req.originalUrl} not found`
+  });
+});
+
+app.use(globalErrorHandler);
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+});
+
+export default app;

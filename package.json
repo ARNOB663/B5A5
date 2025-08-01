@@ -4,58 +4,58 @@
   "description": "A secure, scalable, and role-based backend API for a ride booking system",
   "keywords": [
     "ride-booking",
+    "api",
     "express",
-    "typescript",
     "mongodb",
     "jwt",
-    "api"
+    "typescript"
   ],
-  "homepage": "https://github.com/ARNOB663/Ride_sharing_backend#readme",
+  "homepage": "https://github.com/ARNOB663/B5A5#readme",
   "bugs": {
-    "url": "https://github.com/ARNOB663/Ride_sharing_backend/issues"
+    "url": "https://github.com/ARNOB663/B5A5/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ARNOB663/Ride_sharing_backend.git"
+    "url": "git+ssh://git@github.com/ARNOB663/B5A5.git"
   },
-  "license": "ISC",
-  "author": "",
+  "license": "MIT",
+  "author": "Your Name",
   "type": "commonjs",
-  "main": "dist/server.js",
-  "types": "./dist/server.d.ts",
+  "main": "dist/app.js",
+  "types": "./dist/app.d.ts",
   "scripts": {
+    "start": "node dist/app.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "nodemon src/server.ts",
-    "vercel-build": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "echo \"Linting not configured\"",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.0.1",
-    "helmet": "^8.1.0",
+    "express": "^4.18.2",
+    "mongoose": "^8.0.3",
+    "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.16.5",
-    "morgan": "^1.10.1",
-    "zod": "^4.0.10"
+    "joi": "^17.11.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "express-mongo-sanitize": "^2.2.0",
+    "dotenv": "^16.3.1",
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.9.2",
     "@types/bcryptjs": "^2.4.6",
-    "@types/cookie-parser": "^1.4.9",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.3",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/mongoose": "^5.11.96",
-    "@types/morgan": "^1.9.10",
-    "@types/node": "^24.1.0",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/cors": "^2.8.17",
+    "@types/morgan": "^1.9.9",
+    "typescript": "^5.2.2",
+    "ts-node-dev": "^2.0.0",
+    "rimraf": "^5.0.5",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "eslint": "^8.54.0"
   }
 }

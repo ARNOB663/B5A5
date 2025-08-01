@@ -1,382 +1,237 @@
-# 🚗 Ride Booking API
+# Ride Booking API
 
-A secure, scalable, and role-based backend API for a ride booking system (like Uber, Pathao) built with Express.js, TypeScript, MongoDB, and JWT authentication.
+A secure, scalable, and role-based backend API for a ride booking system (Uber/Pathao style) built with Express.js, TypeScript, and Mongoose.
 
-## 📋 Table of Contents
-
-- [Features](#-features)
-- [Technology Stack](#️-technology-stack)
-- [Project Structure](#-project-structure)
-- [Installation & Setup](#-installation--setup)
-- [Environment Variables](#-environment-variables)
-- [API Endpoints](#-api-endpoints)
-- [Authentication & Authorization](#-authentication--authorization)
-- [Database Models](#-database-models)
-- [Usage Examples](#-usage-examples)
-- [Testing](#-testing)
-- [Contributing](#-contributing)
-
-## ✨ Features
-
-### 🔐 Authentication & Authorization
-- JWT-based authentication system
-- Three distinct roles: **Admin**, **Rider**, **Driver**
-- Secure password hashing with bcrypt
+## Features
+- JWT authentication (admin, rider, driver)
+- Secure password hashing (bcrypt)
+- Rider: request/cancel rides, view history
+- Driver: accept/reject rides, update status, view earnings, set availability
+- Admin: manage users/drivers/rides, approve/suspend/block, dashboard stats
+- Modular code architecture
 - Role-based route protection
+- Complete ride history
+- RESTful API endpoints
 
-### 🧍 User Management
-- User registration and login
-- Profile management and updates
-- Account deactivation
-- Password change functionality
-
-### 🚘 Driver Features
-- Driver registration with vehicle information
-- Admin approval workflow for new drivers
-- Online/offline status management
-- Earnings tracking and statistics
-- Ride acceptance and status updates
-- Vehicle information management
-
-### 🙋 Rider Features
-- Ride request with pickup and destination
-- Ride cancellation (within allowed window)
-- Ride history with pagination
-- Real-time ride status tracking
-
-### 👑 Admin Features
-- User management (view, block/unblock)
-- Driver approval/rejection
-- System-wide ride monitoring
-- Comprehensive analytics and reports
-- System statistics dashboard
-
-### 🚗 Ride Management
-- Complete ride lifecycle management
-- Status tracking: `requested` → `accepted` → `picked_up` → `in_transit` → `completed`
-- Automatic fare calculation
-- Ride history with detailed information
-- Cancellation handling with reasons
-
-## 🛠️ Technology Stack
-
-| Category | Technologies |
-|----------|-------------|
-| **Runtime** | Node.js |
-| **Framework** | Express.js |
-| **Language** | TypeScript |
-| **Database** | MongoDB + Mongoose |
-| **Authentication** | JWT (jsonwebtoken) |
-| **Security** | bcryptjs, helmet, cors |
-| **Validation** | Zod |
-| **Rate Limiting** | express-rate-limit |
-| **Logging** | morgan |
-| **Development** | nodemon, ts-node |
-
-## 📁 Project Structure
-
+## Project Structure
 ```
 src/
 ├── modules/
-│   ├── auth/                 # Authentication module
-│   │   ├── auth.controller.ts
-│   │   └── auth.routes.ts
-│   ├── user/                 # User management
-│   │   ├── user.model.ts
-│   │   ├── user.controller.ts
-│   │   └── user.routes.ts
-│   ├── driver/               # Driver-specific features
-│   │   ├── driver.controller.ts
-│   │   └── driver.routes.ts
-│   ├── ride/                 # Ride management
-│   │   ├── ride.model.ts
-│   │   ├── ride.controller.ts
-│   │   └── ride.routes.ts
-│   └── admin/                # Admin features
-│       ├── admin.controller.ts
-│       └── admin.routes.ts
-├── middlewares/              # Custom middleware
-│   ├── auth.ts              # Authentication & authorization
-│   ├── validation.ts        # Input validation
-│   └── error.ts             # Error handling
-├── config/                   # Configuration files
-│   ├── index.ts             # Main config
-│   └── database.ts          # Database connection
-├── utils/                    # Utility functions
-│   ├── response.ts          # Standardized API responses
-│   ├── jwt.ts               # JWT utilities
-│   ├── password.ts          # Password hashing
-│   └── validation.ts        # Zod schemas
-├── app.ts                    # Express app setup
-└── server.ts                # Server entry point
+│   ├── auth/
+│   ├── user/
+│   ├── driver/
+│   ├── ride/
+│   ├── admin/
+├── middlewares/
+├── config/
+├── utils/
+├── app.ts
 ```
 
-## 🚀 Installation & Setup
-
-### Prerequisites
-- Node.js (v16 or higher)
-- MongoDB (local or cloud instance)
-- npm or yarn
-
-### Installation Steps
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd ride-booking-api
-   ```
-
-2. **Install dependencies**
+## Setup
+1. Clone repo & install dependencies:
    ```bash
    npm install
    ```
-
-3. **Environment Setup**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. **Build the project**
+2. Create `.env` file (see example in repo)
+3. Build & run:
    ```bash
    npm run build
+   npm start
    ```
-
-5. **Start the development server**
+   Or for development:
    ```bash
    npm run dev
    ```
 
-6. **For production**
-   ```bash
-   npm start
-   ```
+## API Endpoints
+See Postman collection for full documentation.
 
-The API will be available at `http://localhost:3000`
+## API Testing
 
-## 🔧 Environment Variables
+To test the Ride Booking API, use [Postman](https://www.postman.com/) or any REST client. Below are example steps and endpoints to verify core features:
 
-Create a `.env` file with the following variables:
+### 1. Authentication
 
-```env
-# Server Configuration
-PORT=3000
-NODE_ENV=development
-
-# Database Configuration
-MONGODB_URI=mongodb://localhost:27017/ride-booking-system
-
-# JWT Configuration
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-JWT_EXPIRES_IN=7d
-
-# Security
-BCRYPT_SALT_ROUNDS=12
-
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-
-# CORS
-CORS_ORIGIN=http://localhost:3000
-```
-
-## 📚 API Endpoints
-
-### 🔐 Authentication Routes
-```
-POST   /api/auth/register          # Register new user
-POST   /api/auth/register/driver   # Register new driver
-POST   /api/auth/login             # User login
-GET    /api/auth/profile           # Get user profile
-```
-
-### 👤 User Routes
-```
-PATCH  /api/users/profile          # Update profile
-PATCH  /api/users/change-password  # Change password
-PATCH  /api/users/deactivate       # Deactivate account
-```
-
-### 🚗 Ride Routes
-```
-POST   /api/rides/request          # Request a ride (Rider)
-PATCH  /api/rides/:id/cancel       # Cancel ride (Rider)
-GET    /api/rides/history          # Get ride history (Rider)
-
-GET    /api/rides/available        # Get available rides (Driver)
-PATCH  /api/rides/:id/accept       # Accept ride (Driver)
-PATCH  /api/rides/:id/status       # Update ride status (Driver)
-GET    /api/rides/earnings         # Get earnings (Driver)
-PATCH  /api/rides/status           # Set online/offline (Driver)
-```
-
-### 🚙 Driver Routes
-```
-GET    /api/drivers/stats          # Get driver statistics
-PATCH  /api/drivers/vehicle        # Update vehicle info
-GET    /api/drivers/active-ride    # Get current active ride
-GET    /api/drivers/ride-history   # Get ride history
-```
-
-### 👑 Admin Routes
-```
-GET    /api/admin/users            # Get all users
-GET    /api/admin/users/:id        # Get user by ID
-GET    /api/admin/drivers/pending  # Get pending drivers
-PATCH  /api/admin/drivers/:id/approve # Approve/reject driver
-PATCH  /api/admin/users/:id/block  # Block/unblock user
-GET    /api/admin/rides            # Get all rides
-GET    /api/admin/rides/:id        # Get ride by ID
-GET    /api/admin/stats            # Get system statistics
-```
-
-## 🔒 Authentication & Authorization
-
-### JWT Authentication
-- Include JWT token in request headers: `Authorization: Bearer <token>`
-- Tokens expire based on `JWT_EXPIRES_IN` configuration
-- Automatic token validation on protected routes
-
-### Role-Based Access Control
-- **Admin**: Full system access, user management, driver approval
-- **Rider**: Ride requests, cancellation, history viewing
-- **Driver**: Ride acceptance, status updates, earnings (requires approval)
-
-### Protected Route Examples
-```typescript
-// Rider only
-router.post('/request', authenticate, authorize('rider'), requestRide);
-
-// Driver only (with approval check)
-router.get('/available', authenticate, authorize('driver'), checkDriverApproval, getAvailableRides);
-
-// Admin only
-router.get('/users', authenticate, authorize('admin'), getAllUsers);
-```
-
-## 🗄️ Database Models
-
-### User Model
-```typescript
-interface IUser {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  phone: string;
-  role: 'admin' | 'rider' | 'driver';
-  isActive: boolean;
-  isBlocked: boolean;
-  blockReason?: string;
-}
-```
-
-### Driver Model (extends User)
-```typescript
-interface IDriver extends IUser {
-  vehicleInfo: {
-    make: string;
-    model: string;
-    year: number;
-    licensePlate: string;
-    color: string;
-  };
-  licenseNumber: string;
-  isApproved: boolean;
-  isOnline: boolean;
-  rating: number;
-  totalRides: number;
-  totalEarnings: number;
-}
-```
-
-### Ride Model
-```typescript
-interface IRide {
-  riderId: string;
-  driverId?: string;
-  pickupLocation: ILocation;
-  destinationLocation: ILocation;
-  rideType: 'standard' | 'premium' | 'shared';
-  status: 'requested' | 'accepted' | 'picked_up' | 'in_transit' | 'completed' | 'cancelled';
-  estimatedFare?: number;
-  actualFare?: number;
-  // ... timestamps and other fields
-}
-```
-
-## 💡 Usage Examples
-
-### Register a New Rider
-```bash
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "firstName": "John",
-    "lastName": "Doe", 
+**Register**
+- Endpoint: `POST /api/auth/register`
+- Request Body:
+  ```json
+  {
+    "name": "John Doe",
     "email": "john@example.com",
-    "password": "SecurePass123",
+    "password": "yourpassword",
     "phone": "+1234567890",
-    "role": "rider"
-  }'
-```
+    "role": "rider" // or "driver" or "admin"
+  }
+  ```
+- Headers: `Content-Type: application/json`
 
-### Request a Ride
-```bash
-curl -X POST http://localhost:3000/api/rides/request \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <token>" \
-  -d '{
+**Login**
+- Endpoint: `POST /api/auth/login`
+- Request Body:
+  ```json
+  {
+    "email": "john@example.com",
+    "password": "yourpassword"
+  }
+  ```
+- Headers: `Content-Type: application/json`
+- Response: JWT token (use in Authorization header for protected routes)
+
+### 2. Rider Flow
+
+**Request Ride**
+- Endpoint: `POST /api/rides/request`
+- Headers:
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <JWT token>`
+- Request Body:
+  ```json
+  {
     "pickupLocation": {
-      "address": "123 Main St, City",
-      "coordinates": {
-        "latitude": 40.7128,
-        "longitude": -74.0060
-      }
+      "address": "123 Main St",
+      "latitude": 23.8103,
+      "longitude": 90.4125
     },
-    "destinationLocation": {
-      "address": "456 Oak Ave, City", 
-      "coordinates": {
-        "latitude": 40.7589,
-        "longitude": -73.9851
-      }
-    },
-    "rideType": "standard"
-  }'
-```
+    "destination": {
+      "address": "456 Park Ave",
+      "latitude": 23.7806,
+      "longitude": 90.2792
+    }
+  }
+  ```
 
-### Accept a Ride (Driver)
-```bash
-curl -X PATCH http://localhost:3000/api/rides/:rideId/accept \
-  -H "Authorization: Bearer <driver-token>"
-```
+**Cancel Ride**
+- Endpoint: `PATCH /api/rides/:rideId/cancel`
+- Headers:
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <JWT token>`
+- Request Body:
+  ```json
+  {
+    "reason": "Change of plans"
+  }
+  ```
 
-## 🧪 Testing
+**View Ride History**
+- Endpoint: `GET /api/rides/me`
+- Headers:
+  - `Authorization: Bearer <JWT token>`
 
-The API can be tested using:
+### 3. Driver Flow
 
-### Postman Collection
-1. Import the API endpoints into Postman
-2. Set up environment variables for base URL and tokens
-3. Test authentication flow: Register → Login → Protected routes
+**Register as Driver**
+- Endpoint: `POST /api/auth/driver/register`
+- Headers:
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <JWT token>`
+- Request Body:
+  ```json
+  {
+    "licenseNumber": "DL123456",
+    "vehicleInfo": {
+      "make": "Toyota",
+      "model": "Corolla",
+      "year": 2020,
+      "plateNumber": "ABC-1234",
+      "color": "Black"
+    }
+  }
+  ```
 
-### Manual Testing Flow
-1. **Setup**: Start MongoDB and the API server
-2. **Register Users**: Create admin, rider, and driver accounts
-3. **Admin Actions**: Approve driver accounts
-4. **Ride Flow**: Request ride (rider) → Accept ride (driver) → Update status → Complete
+**Set Availability**
+- Endpoint: `PATCH /api/driver/availability`
+- Headers:
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <JWT token>`
+- Request Body:
+  ```json
+  {
+    "status": "online", // or "offline"
+    "location": {
+      "latitude": 23.8103,
+      "longitude": 90.4125
+    }
+  }
+  ```
 
-### Health Check
-```bash
-curl http://localhost:3000/health
-```
+**View Available Rides**
+- Endpoint: `GET /api/rides/available`
+- Headers:
+  - `Authorization: Bearer <JWT token>`
 
-## 🤝 Contributing
+**Accept Ride**
+- Endpoint: `PATCH /api/rides/:rideId/accept`
+- Headers:
+  - `Authorization: Bearer <JWT token>`
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/new-feature`
-3. Commit changes: `git commit -am 'Add new feature'`
-4. Push to branch: `git push origin feature/new-feature`
-5. Submit a pull request
+**Update Ride Status**
+- Endpoint: `PATCH /api/rides/:rideId/status`
+- Headers:
+  - `Content-Type: application/json`
+  - `Authorization: Bearer <JWT token>`
+- Request Body:
+  ```json
+  {
+    "status": "picked_up" // or "in_transit" or "completed"
+  }
+  ```
 
+**View Earnings**
+- Endpoint: `GET /api/driver/earnings`
+- Headers:
+  - `Authorization: Bearer <JWT token>`
+
+### 4. Admin Flow
+
+**View Users**
+- Endpoint: `GET /api/admin/users`
+- Headers:
+  - `Authorization: Bearer <JWT token>`
+
+**Approve/Suspend Driver**
+- Endpoint: `PATCH /api/admin/drivers/:driverId/approve` or `PATCH /api/admin/drivers/:driverId/suspend`
+- Headers:
+  - `Authorization: Bearer <JWT token>`
+
+**Block/Unblock User**
+- Endpoint: `PATCH /api/admin/users/:userId/block` or `PATCH /api/admin/users/:userId/unblock`
+- Headers:
+  - `Authorization: Bearer <JWT token>`
+
+**View All Rides**
+- Endpoint: `GET /api/admin/rides`
+- Headers:
+  - `Authorization: Bearer <JWT token>`
+
+**Dashboard Stats**
+- Endpoint: `GET /api/admin/dashboard/stats`
+- Headers:
+  - `Authorization: Bearer <JWT token>`
+
+### 5. General
+
+**Welcome Page**
+- Endpoint: `GET /`
+- Description: Welcome message and API overview
+
+**Health Check**
+- Endpoint: `GET /health`
+
+#### Tips
+
+- Always include the JWT token in the `Authorization` header: `Bearer <token>`
+- Test edge cases: blocked users, suspended drivers, ride cancellation rules, etc.
+- Use the provided Postman collection for ready-made requests and test flows.
+
+For more details, see the API documentation and demo video.
+
+## Testing
+- Use Postman for endpoint testing
+
+## Demo Video
+- See submitted screen recording for walkthrough
+
+## License
+MIT

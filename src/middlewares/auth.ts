@@ -1,88 +1,75 @@
+import * as jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import { verifyToken, extractTokenFromHeader, JwtPayload } from '../utils/jwt';
-import { sendError } from '../utils/response';
-import User from '../modules/user/user.model';
+import { User, IUser } from '../modules/user/userModel';
+import { ResponseHelper } from '../utils/response';
+import { UserRole } from '../utils/types';
+import { config } from '../config/config';
 
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: JwtPayload & { isBlocked?: boolean };
-    }
-  }
+interface AuthRequest extends Request {
+  user?: IUser;
 }
 
-export const authenticate = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void | Response> => {
+export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const token = extractTokenFromHeader(req.headers.authorization);
-    const decoded = verifyToken(token);
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
- 
-    const user = await User.findById(decoded.userId);
+    if (!token) {
+      ResponseHelper.error(res, 'Access denied. No token provided.', 401);
+      return;
+    }
+
+    const decoded = (jwt as any).verify(token, config.jwtSecret) as { userId: string };
+    const user = await User.findById(decoded.userId).select('-password');
+
     if (!user) {
-      return sendError(res, 'User not found', undefined, 401);
+      ResponseHelper.error(res, 'Invalid token. User not found.', 401);
+      return;
     }
 
     if (user.isBlocked) {
-      return sendError(res, 'Account has been blocked', user.blockReason, 403);
+      ResponseHelper.error(res, 'Account is blocked. Contact admin.', 403);
+      return;
     }
 
-    if (!user.isActive) {
-      return sendError(res, 'Account is deactivated', undefined, 403);
-    }
-
-    req.user = {
-      ...decoded,
-      isBlocked: user.isBlocked,
-    };
-
+    req.user = user;
     next();
   } catch (error) {
-    return sendError(res, 'Authentication failed', (error as Error).message, 401);
+    ResponseHelper.error(res, 'Invalid token.', 401);
   }
 };
 
-export const authorize = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction): void | Response => {
+export const authorize = (...roles: UserRole[]) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return sendError(res, 'Authentication required', undefined, 401);
+      ResponseHelper.error(res, 'Authentication required.', 401);
+      return;
     }
 
     if (!roles.includes(req.user.role)) {
-      return sendError(res, 'Insufficient permissions', undefined, 403);
+      ResponseHelper.error(res, 'Access denied. Insufficient permissions.', 403);
+      return;
     }
 
     next();
   };
 };
 
-
-export const checkDriverApproval = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void | Response> => {
+export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    if (!req.user || req.user.role !== 'driver') {
-      return sendError(res, 'Driver access required', undefined, 403);
-    }
+    const token = req.header('Authorization')?.replace('Bearer ', '');
 
-    const driver = await User.findById(req.user.userId);
-    if (!driver || driver.role !== 'driver') {
-      return sendError(res, 'Driver not found', undefined, 404);
-    }
-
-    const driverData = driver as any; 
-    if (!driverData.isApproved) {
-      return sendError(res, 'Driver account not approved yet', undefined, 403);
+    if (token) {
+      const decoded = (jwt as any).verify(token, config.jwtSecret) as { userId: string };
+      const user = await User.findById(decoded.userId).select('-password');
+      
+      if (user && !user.isBlocked) {
+        req.user = user;
+      }
     }
 
     next();
   } catch (error) {
-    return sendError(res, 'Error checking driver approval', (error as Error).message, 500);
+    // Continue without authentication for optional auth
+    next();
   }
 };

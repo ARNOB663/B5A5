@@ -1,52 +1,26 @@
 import { Response } from 'express';
+import { ApiResponse } from './types';
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message: string;
-  data?: T;
-  error?: string;
-  timestamp: string;
+export class ResponseHelper {
+  static success<T>(res: Response, message: string, data?: T, statusCode: number = 200): Response {
+    const response: ApiResponse<T> = {
+      success: true,
+      message,
+      data
+    };
+    return res.status(statusCode).json(response);
+  }
+
+  static error(res: Response, message: string, statusCode: number = 400, error?: string): Response {
+    const response: ApiResponse = {
+      success: false,
+      message,
+      error
+    };
+    return res.status(statusCode).json(response);
+  }
 }
 
-export const sendResponse = <T>(
-  res: Response,
-  statusCode: number,
-  success: boolean,
-  message: string,
-  data?: T,
-  error?: string
-): Response => {
-  const response: ApiResponse<T> = {
-    success,
-    message,
-    timestamp: new Date().toISOString(),
-  };
-
-  if (data !== undefined) {
-    response.data = data;
-  }
-
-  if (error) {
-    response.error = error;
-  }
-
-  return res.status(statusCode).json(response);
-};
-
-export const sendSuccess = <T>(
-  res: Response,
-  message: string,
-  data?: T,
-  statusCode: number = 200
-): Response => {
-  return sendResponse(res, statusCode, true, message, data);
-};
-
-export const sendError = (
-  res: Response,
-  message: string,
-  error?: string,
-  statusCode: number = 400
-): Response => {
-  return sendResponse(res, statusCode, false, message, undefined, error);
+export const asyncHandler = (fn: Function) => (req: any, res: any, next: any) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
 };

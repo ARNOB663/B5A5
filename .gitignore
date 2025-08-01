@@ -1,9 +1,14 @@
 node_modules/
 dist/
 .env
-.DS_Store
 *.log
+.DS_Store
+.vscode/
+.idea/
 *.tgz
-.vscode/settings.json
+*.tar.gz
 coverage/
 .nyc_output/
+.cache/
+.temp/
+.vercel
