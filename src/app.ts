@@ -49,7 +49,7 @@ if (process.env.NODE_ENV === 'development') {
 // Welcome route
 app.get('/', (req, res) => {
   res.status(200).json({
-    status: 'success',
+    success: true,
     message: 'Welcome to our Ride Sharing App! 🚗',
     description: 'A secure, scalable, and role-based backend API for ride booking',
     version: '1.0.0',
@@ -67,7 +67,7 @@ app.get('/', (req, res) => {
 
 app.get('/health', (req, res) => {
   res.status(200).json({
-    status: 'success',
+    success: true,
     message: 'Ride Booking API is running!',
     timestamp: new Date().toISOString()
   });
@@ -82,7 +82,7 @@ app.use('/api/v1/admin', adminRoutes);
 
 app.all('*', (req, res) => {
   res.status(404).json({
-    status: 'error',
+    success: false,
     message: `Route ${req.originalUrl} not found`
   });
 });

@@ -14,7 +14,34 @@ import { UserRole } from '../../utils/types';
 
 const router = Router();
 
-// All routes require authentication and admin role
+// Base admin route - shows available endpoints (no auth required for info)
+router.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Admin API endpoints',
+    endpoints: {
+      users: {
+        list: 'GET /api/v1/admin/users',
+        block: 'PATCH /api/v1/admin/users/:userId/block',
+        unblock: 'PATCH /api/v1/admin/users/:userId/unblock'
+      },
+      drivers: {
+        list: 'GET /api/v1/admin/drivers',
+        approve: 'PATCH /api/v1/admin/drivers/:driverId/approve',
+        suspend: 'PATCH /api/v1/admin/drivers/:driverId/suspend'
+      },
+      rides: {
+        list: 'GET /api/v1/admin/rides'
+      },
+      dashboard: {
+        stats: 'GET /api/v1/admin/dashboard/stats'
+      }
+    },
+    note: 'All endpoints require authentication with admin role'
+  });
+});
+
+// All other routes require authentication and admin role
 router.use(authenticate, authorize(UserRole.ADMIN));
 
 // User management
