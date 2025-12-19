@@ -17,14 +17,20 @@ dotenv.config();
 
 const app = express();
 
-
-connectDatabase();
+// Connect to database (async, but don't block serverless startup)
+connectDatabase().catch((error) => {
+  console.error('Failed to connect to database:', error);
+});
 
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+// CORS configuration - allow all origins in production, configure specific origins in .env
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN 
+    ? process.env.CORS_ORIGIN.split(',') 
+    : (process.env.NODE_ENV === 'production' ? true : 'http://localhost:3000'),
   credentials: true
-}));
+};
+app.use(cors(corsOptions));
 
 
 const limiter = rateLimit({
@@ -89,11 +95,13 @@ app.all('*', (req, res) => {
 
 app.use(globalErrorHandler);
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-});
+// Only start server if not in Vercel environment
+if (process.env.VERCEL !== '1') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+  });
+}
 
 export default app;
