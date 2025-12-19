@@ -25,9 +25,11 @@ const router = Router();
 router.use(authenticate);
 
 
+// Rider routes
 router.post('/request', authorize(UserRole.RIDER), validate(requestRideValidation), requestRide);
-router.get('/history', getRideHistory);
-router.post('/:rideId/cancel', validate(cancelRideValidation), cancelRide);
+router.get('/me', getRideHistory); // Get ride history for current user
+router.get('/history', getRideHistory); // Alias for backward compatibility
+router.patch('/:rideId/cancel', validate(cancelRideValidation), cancelRide);
 router.get('/current', getCurrentRide);
 router.post('/:rideId/rate', authorize(UserRole.RIDER), validate(rateRideValidation), rateRide);
 

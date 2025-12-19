@@ -169,13 +169,32 @@ export const getAvailableRides = asyncHandler(async (req: AuthRequest, res: Resp
     return;
   }
 
-  // Get available rides (requested status)
+  // Get available rides (requested status) with geo-based matching
   const rides = await Ride.find({ status: RideStatus.REQUESTED })
     .populate('riderId', 'name phone')
     .sort({ requestedAt: 1 })
-    .limit(20);
+    .limit(50);
 
-  ResponseHelper.success(res, 'Available rides retrieved successfully', { rides });
+  // If driver has location, sort by distance from driver
+  let ridesWithDistance = rides;
+  if (driver.currentLocation) {
+    ridesWithDistance = rides.map(ride => {
+      const distance = calculateDistance(
+        driver.currentLocation!.latitude,
+        driver.currentLocation!.longitude,
+        ride.pickupLocation.latitude,
+        ride.pickupLocation.longitude
+      );
+      return {
+        ...ride.toObject(),
+        distanceFromDriver: parseFloat(distance.toFixed(2))
+      };
+    }).sort((a: any, b: any) => a.distanceFromDriver - b.distanceFromDriver);
+  }
+
+  ResponseHelper.success(res, 'Available rides retrieved successfully', { 
+    rides: ridesWithDistance.slice(0, 20) // Return top 20 closest rides
+  });
 });
 
 export const acceptRide = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {

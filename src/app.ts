@@ -10,6 +10,7 @@ import { globalErrorHandler } from './middlewares/errorHandler';
 import authRoutes from './modules/auth/authRoutes';
 import driverRoutes from './modules/driver/driverRoutes';
 import rideRoutes from './modules/ride/rideRoutes';
+import adminRoutes from './modules/admin/adminRoutes';
 
 
 dotenv.config();
@@ -76,6 +77,7 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/drivers', driverRoutes);
 app.use('/api/v1/rides', rideRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 
 app.all('*', (req, res) => {
