@@ -20,7 +20,22 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"+1234567890\",\n  \"role\": \"rider\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","register"] }
-          }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"+1234567890\",\n  \"role\": \"rider\"\n}" },
+                "url": { "raw": "{{baseUrl}}/api/v1/auth/register" }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"success\":true,\"message\":\"User registered successfully\",\"data\":{\"user\":{\"_id\":\"64f0f3b3a1e2c0b8d6e4f7a1\",\"name\":\"Test User\",\"email\":\"test@example.com\",\"phone\":\"+1234567890\",\"role\":\"rider\",\"isBlocked\":false,\"createdAt\":\"2025-12-24T12:00:00.000Z\"},\"token\":\"eyJhbGciOi...\"}}"
+            }
+          ]
         },
         {
           "name": "Login",
@@ -29,7 +44,22 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": { "mode": "raw", "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}" },
             "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","login"] }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}" },
+                "url": { "raw": "{{baseUrl}}/api/v1/auth/login" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"success\":true,\"message\":\"Login successful\",\"data\":{\"user\":{\"_id\":\"64f0f3b3a1e2c0b8d6e4f7a1\",\"name\":\"Test User\",\"email\":\"test@example.com\",\"phone\":\"+1234567890\",\"role\":\"rider\",\"isBlocked\":false,\"createdAt\":\"2025-12-24T12:00:00.000Z\"},\"token\":\"eyJhbGciOi...\"}}"
+            }
+          ]
         },
         {
           "name": "Get Profile",
@@ -51,7 +81,22 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{jwt}}" }],
             "body": { "mode": "raw", "raw": "{\n  \"pickupLocation\": { \"address\": \"Pickup\", \"latitude\": 12.34, \"longitude\": 56.78 },\n  \"destination\": { \"address\": \"Dest\", \"latitude\": 12.35, \"longitude\": 56.79 }\n}" },
             "url": { "raw": "{{baseUrl}}/api/v1/rides/request", "host": ["{{baseUrl}}"], "path": ["api","v1","rides","request"] }
-          }
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{jwt}}" }],
+                "body": { "mode": "raw", "raw": "{\n  \"pickupLocation\": { \"address\": \"Pickup\", \"latitude\": 12.34, \"longitude\": 56.78 },\n  \"destination\": { \"address\": \"Dest\", \"latitude\": 12.35, \"longitude\": 56.79 }\n}" },
+                "url": { "raw": "{{baseUrl}}/api/v1/rides/request" }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"success\":true,\"message\":\"Ride requested successfully\",\"data\":{\"ride\":{\"_id\":\"650a1f9e5d1b3c2a4b6e7f8c\",\"riderId\":{\"_id\":\"64f0f3b3a1e2c0b8d6e4f7a1\",\"name\":\"Test User\",\"phone\":\"+1234567890\"},\"pickupLocation\":{\"address\":\"123 Pickup St\",\"latitude\":12.34,\"longitude\":56.78},\"destination\":{\"address\":\"456 Destination Ave\",\"latitude\":12.35,\"longitude\":56.79},\"distance\":2.34,\"fare\":85.1,\"status\":\"requested\",\"requestedAt\":\"2025-12-24T12:10:00.000Z\"}}}"
+            }
+          ]
         },
         {
           "name": "Get My Rides",
@@ -67,7 +112,17 @@
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
             "url": { "raw": "{{baseUrl}}/api/v1/rides/available", "host": ["{{baseUrl}}"], "path": ["api","v1","rides","available"] }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/rides/available" } },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"success\":true,\"message\":\"Available rides retrieved successfully\",\"data\":{\"rides\":[{\"_id\":\"650a1f9e5d1b3c2a4b6e7f8c\",\"riderId\":{\"_id\":\"64f0f3b3a1e2c0b8d6e4f7a1\",\"name\":\"Test Rider\",\"phone\":\"+1234567890\"},\"pickupLocation\":{\"address\":\"123 Pickup St\",\"latitude\":12.34,\"longitude\":56.78},\"destination\":{\"address\":\"456 Destination Ave\",\"latitude\":12.35,\"longitude\":56.79},\"distance\":2.34,\"fare\":85.1,\"status\":\"requested\",\"requestedAt\":\"2025-12-24T12:10:00.000Z\",\"distanceFromDriver\":1.42}]}}"
+            }
+          ]
         }
       ]
     },
@@ -81,7 +136,17 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{jwt}}" }],
             "body": { "mode": "raw", "raw": "{ \"status\": \"online\", \"location\": { \"latitude\": 12.34, \"longitude\": 56.78 } }" },
             "url": { "raw": "{{baseUrl}}/api/v1/drivers/availability", "host": ["{{baseUrl}}"], "path": ["api","v1","drivers","availability"] }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": { "method": "PATCH", "url": { "raw": "{{baseUrl}}/api/v1/drivers/availability" } },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"success\":true,\"message\":\"Availability status updated successfully\",\"data\":{\"driver\":{\"status\":\"online\",\"currentLocation\":{\"latitude\":12.34,\"longitude\":56.78}}}}"
+            }
+          ]
         }
       ]
     },
@@ -94,7 +159,17 @@
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{jwt}}" }],
             "url": { "raw": "{{baseUrl}}/api/v1/admin/users", "host": ["{{baseUrl}}"], "path": ["api","v1","admin","users"] }
-          }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/v1/admin/users" } },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\"success\":true,\"message\":\"Users retrieved successfully\",\"data\":{\"users\":[{\"_id\":\"64f0f3b3a1e2c0b8d6e4f7a1\",\"name\":\"Test User\",\"email\":\"test@example.com\",\"phone\":\"+1234567890\"}] ,\"pagination\":{\"currentPage\":1,\"totalPages\":1,\"totalUsers\":1}}}"
+            }
+          ]
         }
       ]
     }
