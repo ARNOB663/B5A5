@@ -32,6 +32,8 @@ const handleJWTExpiredError = () => {
   return { message: 'Your token has expired! Please log in again.', statusCode: 401 };
 };
 
+import { config } from '../config/config';
+
 const sendErrorDev = (err: ErrorWithStatus, res: Response) => {
   ResponseHelper.error(res, err.message, err.statusCode || 500, err.stack);
 };
@@ -51,7 +53,7 @@ export const globalErrorHandler = (err: ErrorWithStatus, req: Request, res: Resp
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
-  if (process.env.NODE_ENV === 'development') {
+  if (config.nodeEnv === 'development') {
     sendErrorDev(err, res);
   } else {
     let error = { ...err, message: err.message };

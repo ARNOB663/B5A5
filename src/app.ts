@@ -7,6 +7,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import dotenv from 'dotenv';
 import { connectDatabase } from './config/database';
 import { globalErrorHandler } from './middlewares/errorHandler';
+import { config } from './config/config';
 import authRoutes from './modules/auth/authRoutes';
 import driverRoutes from './modules/driver/driverRoutes';
 import rideRoutes from './modules/ride/rideRoutes';
@@ -48,7 +49,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(mongoSanitize());
 
 
-if (process.env.NODE_ENV === 'development') {
+if (config.nodeEnv === 'development') {
   app.use(morgan('dev'));
 }
 
@@ -97,14 +98,14 @@ app.all('*', (req, res) => {
 app.use(globalErrorHandler);
 
 // Only start server if not in Vercel environment
-if (process.env.VERCEL !== '1') {
-  const PORT = process.env.PORT || 3000;
+if (config.vercel !== '1') {
+  const PORT = config.port || 3000;
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    if (process.env.NODE_ENV) {
-      console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+    if (config.nodeEnv) {
+      console.log(`🌍 Environment: ${config.nodeEnv}`);
     }
   });
-}
+} 
 
 export default app;
