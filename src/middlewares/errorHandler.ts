@@ -91,6 +91,13 @@ export const globalErrorHandler = (err: ErrorWithStatus, req: Request, res: Resp
       error.isOperational = true;
     }
 
+    // Handle DB connectivity errors explicitly (e.g., MongooseServerSelectionError)
+    if (error.name === 'MongooseServerSelectionError' || error.name === 'MongoNetworkError') {
+      error.message = 'Service unavailable: cannot connect to database';
+      error.statusCode = 503;
+      error.isOperational = true;
+    }
+
     sendErrorProd(error, res);
   }
 };

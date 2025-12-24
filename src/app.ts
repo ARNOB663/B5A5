@@ -30,6 +30,9 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// Reject requests early if DB is not connected (returns 503 until DB is available)
+import { ensureDbConnected } from './middlewares/db';
+app.use(ensureDbConnected);
 
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
