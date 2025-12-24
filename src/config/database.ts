@@ -1,59 +1,46 @@
 import mongoose from 'mongoose';
 import { config } from './config';
 
-// Cache the connection to reuse in serverless environments
-let cachedConnection: typeof mongoose | null = null;
+// Define the global type for mongoose caching
+// Using 'any' to avoid strict TypeScript checks that are failing on Vercel/local builds
+let cached = (global as any).mongoose;
 
-export const connectDatabase = async (): Promise<void> => {
-  try {
-    // Reuse existing connection if available (for serverless)
-    if (cachedConnection && mongoose.connection.readyState === 1) {
-      console.log('✅ Using existing MongoDB connection');
-      return;
-    }
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
+}
 
-    // Close existing connection if it exists but is not ready
-    if (cachedConnection) {
-      await mongoose.connection.close();
-    }
-
-    // Basic check: if mongodbUri is using the fallback local value in production, warn
-    if (!config.mongodbUri || config.mongodbUri === 'mongodb://localhost:27017/ride-booking') {
-      console.warn('⚠️ MongoDB URI not configured or using local fallback. Connection will likely fail in production.');
-    }
-
-    // Log host only (do not print credentials)
-    try {
-      let host = config.mongodbUri;
-      if (host.startsWith('mongodb+srv://')) {
-        host = host.replace('mongodb+srv://', '').split('/')[0];
-      } else if (host.startsWith('mongodb://')) {
-        host = host.replace('mongodb://', '').split('/')[0];
-      }
-      console.log('🔗 MongoDB host:', host);
-    } catch (e) {
-      // ignore
-    }
-
-    await mongoose.connect(config.mongodbUri, {
-      bufferCommands: false, // Turn off command buffering
-      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      // Additional options for serverless robustness
-      maxPoolSize: 1, // Maintain up to 1 socket connection
-      minPoolSize: 1, // Ensure at least 1 socket connection is open
-      maxIdleTimeMS: 10000, // Close sockets after 10 seconds of inactivity
-    });
-    cachedConnection = mongoose;
-    console.log('✅ MongoDB connected successfully');
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
-    // Don't exit process in serverless environment
-    if ((process.env.VERCEL !== '1') && (process.env.vercel !== '1')) {
-      process.exit(1);
-    }
-    throw error;
+export const connectDatabase = async (): Promise<typeof mongoose> => {
+  if (cached.conn) {
+    console.log('✅ Using existing MongoDB connection');
+    return cached.conn;
   }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
+
+    console.log('🔗 Connecting to MongoDB...');
+
+    if (!config.mongodbUri) {
+      throw new Error('MONGODB_URI is not defined in environment variables');
+    }
+
+    cached.promise = mongoose.connect(config.mongodbUri, opts).then((mongoose) => {
+      console.log('✅ New MongoDB connection established');
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    console.error('❌ MongoDB connection promise failed:', e);
+    throw e;
+  }
+
+  return cached.conn;
 };
 
 mongoose.connection.on('disconnected', () => {

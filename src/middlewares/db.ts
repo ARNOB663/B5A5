@@ -16,6 +16,6 @@ export const ensureDbConnected = async (req: Request, res: Response, next: NextF
     next();
   } catch (error) {
     console.error('Database connection failed in middleware:', error);
-    ResponseHelper.error(res, 'Service unavailable: database connection failed', 503);
+    ResponseHelper.error(res, `Service unavailable: database connection failed. Cause: ${(error as Error).message}`, 503);
   }
 };
