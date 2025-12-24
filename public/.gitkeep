@@ -1,0 +1,4 @@
+{
+  "name": "Ride Booking API",
+  "description": "API-only project - all routes handled by serverless functions"
+}
