@@ -23,8 +23,13 @@ export const connectDatabase = async (): Promise<typeof mongoose> => {
     throw new Error('MONGODB_URI is not defined in environment variables');
   }
 
+  // CRITICAL CHECK: Fail fast if using localhost in production
   if (config.mongodbUri === 'mongodb://localhost:27017/ride-booking') {
-    console.warn('⚠️ Using default localhost MongoDB URI - this will fail in production!');
+    const errorMsg = '⚠️ Using default localhost MongoDB URI - this will fail in production!';
+    console.error(errorMsg);
+    if (process.env.VERCEL) {
+      throw new Error('MONGODB_URI environment variable is not set in Vercel. Please add it in Project Settings → Environment Variables');
+    }
   }
 
   // Sanitize and log the URI for debugging
@@ -37,15 +42,19 @@ export const connectDatabase = async (): Promise<typeof mongoose> => {
   };
 
   console.log(`🔗 Connecting to MongoDB: ${sanitizeUri(config.mongodbUri)}`);
+  console.log(`   Full URI length: ${config.mongodbUri.length} characters`);
+  console.log(`   Protocol: ${config.mongodbUri.startsWith('mongodb+srv://') ? 'SRV (Atlas)' : 'Standard'}`);
 
   isConnecting = true;
 
   const connectionOptions = {
     bufferCommands: false,
-    serverSelectionTimeoutMS: 10000, // 10 seconds to find a server
-    socketTimeoutMS: 45000, // 45 seconds for socket operations
-    family: 4, // Use IPv4, skip trying IPv6
+    serverSelectionTimeoutMS: 30000, // Increased to 30 seconds for Vercel cold starts
+    socketTimeoutMS: 45000,
+    family: 4, // Use IPv4
   };
+
+  console.log('🔧 Connection options:', JSON.stringify(connectionOptions, null, 2));
 
   connectionPromise = mongoose
     .connect(config.mongodbUri, connectionOptions)
@@ -60,19 +69,25 @@ export const connectDatabase = async (): Promise<typeof mongoose> => {
       isConnecting = false;
       connectionPromise = null;
 
+      // Enhanced error logging
+      console.error('❌ MongoDB connection failed');
+      console.error('   Error name:', error.name);
+      console.error('   Error message:', error.message);
+
       // Provide specific error messages based on error type
       if (error.name === 'MongooseServerSelectionError') {
-        console.error('❌ MongoDB Server Selection Error - Cannot reach database server');
+        console.error('   Diagnosis: Cannot reach MongoDB server');
         console.error('   Possible causes:');
-        console.error('   1. MongoDB Atlas IP whitelist does not include your deployment IP');
+        console.error('   1. MongoDB Atlas IP whitelist does not include Vercel IPs (add 0.0.0.0/0)');
         console.error('   2. Invalid connection string');
         console.error('   3. Network connectivity issues');
+        console.error('   4. MongoDB Atlas cluster is paused or deleted');
       } else if (error.name === 'MongoParseError') {
-        console.error('❌ MongoDB Parse Error - Invalid connection string format');
-      } else if (error.message.includes('authentication')) {
-        console.error('❌ MongoDB Authentication Error - Invalid credentials');
-      } else {
-        console.error('❌ MongoDB connection error:', error.message);
+        console.error('   Diagnosis: Invalid connection string format');
+        console.error('   Check: Connection string syntax and encoding');
+      } else if (error.message.includes('authentication') || error.message.includes('auth')) {
+        console.error('   Diagnosis: Authentication failed');
+        console.error('   Check: Username and password in connection string');
       }
 
       throw error;
