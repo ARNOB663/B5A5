@@ -17,6 +17,24 @@ export const connectDatabase = async (): Promise<void> => {
       await mongoose.connection.close();
     }
 
+    // Basic check: if mongodbUri is using the fallback local value in production, warn
+    if (!config.mongodbUri || config.mongodbUri === 'mongodb://localhost:27017/ride-booking') {
+      console.warn('⚠️ MongoDB URI not configured or using local fallback. Connection will likely fail in production.');
+    }
+
+    // Log host only (do not print credentials)
+    try {
+      let host = config.mongodbUri;
+      if (host.startsWith('mongodb+srv://')) {
+        host = host.replace('mongodb+srv://', '').split('/')[0];
+      } else if (host.startsWith('mongodb://')) {
+        host = host.replace('mongodb://', '').split('/')[0];
+      }
+      console.log('🔗 MongoDB host:', host);
+    } catch (e) {
+      // ignore
+    }
+
     await mongoose.connect(config.mongodbUri);
     cachedConnection = mongoose;
     console.log('✅ MongoDB connected successfully');

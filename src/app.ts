@@ -77,6 +77,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Ride Booking API is running!',
+    dbConnected: (require('mongoose').connection.readyState === 1),
     timestamp: new Date().toISOString()
   });
 });
