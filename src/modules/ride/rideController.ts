@@ -175,10 +175,11 @@ export const getAvailableRides = asyncHandler(async (req: AuthRequest, res: Resp
     .sort({ requestedAt: 1 })
     .limit(50);
 
-  // If driver has location, sort by distance from driver
-  let ridesWithDistance = rides;
+  // Work with plain objects when adding calculated fields to avoid Mongoose Document typing issues
+  let ridesWithDistance: any[] = rides.map(r => r.toObject());
+
   if (driver.currentLocation) {
-    ridesWithDistance = rides.map(ride => {
+    ridesWithDistance = ridesWithDistance.map(ride => {
       const distance = calculateDistance(
         driver.currentLocation!.latitude,
         driver.currentLocation!.longitude,
@@ -186,7 +187,7 @@ export const getAvailableRides = asyncHandler(async (req: AuthRequest, res: Resp
         ride.pickupLocation.longitude
       );
       return {
-        ...ride.toObject(),
+        ...ride,
         distanceFromDriver: parseFloat(distance.toFixed(2))
       };
     }).sort((a: any, b: any) => a.distanceFromDriver - b.distanceFromDriver);
