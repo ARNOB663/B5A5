@@ -1,4 +1,3 @@
-openapi: 3.0.3
 info:
   title: Ride Booking API
   version: 1.0.0
@@ -13,6 +12,18 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    ApiResponse:
+      description: Standard API response wrapper
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operation successful
+        data:
+          type: object
     ErrorResponse:
       type: object
       properties:
@@ -23,6 +34,21 @@ components:
           type: string
         error:
           type: string
+    RegisterRequest:
+      type: object
+      required: [name, email, password, phone, role]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        password: { type: string }
+        phone: { type: string }
+        role: { type: string, enum: [admin, rider, driver] }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
     User:
       type: object
       properties:
@@ -58,6 +84,14 @@ components:
           type: number
         longitude:
           type: number
+    RideRequest:
+      type: object
+      required: [pickupLocation, destination]
+      properties:
+        pickupLocation:
+          $ref: '#/components/schemas/Location'
+        destination:
+          $ref: '#/components/schemas/Location'
     Ride:
       type: object
       properties:
@@ -80,6 +114,9 @@ components:
         requestedAt:
           type: string
           format: date-time
+        distanceFromDriver:
+          type: number
+          description: Computed in meters/km depending on server implementation
     PaginatedRides:
       type: object
       properties:
@@ -96,6 +133,61 @@ components:
               type: integer
             totalRides:
               type: integer
+    PaginatedUsers:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        pagination:
+          type: object
+          properties:
+            currentPage: { type: integer }
+            totalPages: { type: integer }
+            totalUsers: { type: integer }
+    Driver:
+      type: object
+      properties:
+        _id: { type: string }
+        userId: { $ref: '#/components/schemas/User' }
+        licenseNumber: { type: string }
+        vehicleInfo:
+          type: object
+          properties:
+            make: { type: string }
+            model: { type: string }
+            year: { type: integer }
+            plateNumber: { type: string }
+        approvalStatus: { type: string }
+        status: { type: string }
+        rating: { type: number }
+        totalRides: { type: integer }
+        totalEarnings: { type: number }
+    EarningsResponse:
+      type: object
+      properties:
+        totalEarnings: { type: number }
+        periodEarnings: { type: number }
+        totalRides: { type: integer }
+        periodRides: { type: integer }
+        rides:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ride'
+    DashboardStats:
+      type: object
+      properties:
+        totalUsers: { type: integer }
+        totalDrivers: { type: integer }
+        totalRides: { type: integer }
+        completedRides: { type: integer }
+        activeRides: { type: integer }
+        totalRevenue: { type: number }
+        pendingDriverApprovals: { type: integer }
+        averageRidesPerDay: { type: number }
+        rideCompletionRate: { type: number }
+
 security:
   - bearerAuth: []
 paths:
@@ -121,13 +213,24 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  message: { type: string }
-                  data: { $ref: '#/components/schemas/TokenResponse' }
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: "User registered successfully"
+                    data:
+                      user:
+                        _id: "64f0f3b3a1e2c0b8d6e4f7a1"
+                        name: "Test User"
+                        email: "test@example.com"
+                        phone: "+1234567890"
+                        role: "rider"
+                        isBlocked: false
+                        createdAt: "2025-12-24T12:00:00.000Z"
+                      token: "eyJhbGciOi..."
         '400':
-          $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/schemas/ErrorResponse' 
   /api/v1/auth/login:
     post:
       tags: [Auth]
@@ -147,13 +250,24 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  message: { type: string }
-                  data: { $ref: '#/components/schemas/TokenResponse' }
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: "Login successful"
+                    data:
+                      user:
+                        _id: "64f0f3b3a1e2c0b8d6e4f7a1"
+                        name: "Test User"
+                        email: "test@example.com"
+                        phone: "+1234567890"
+                        role: "rider"
+                        isBlocked: false
+                        createdAt: "2025-12-24T12:00:00.000Z"
+                      token: "eyJhbGciOi..."
         '401':
-          $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/schemas/ErrorResponse' 
   /api/v1/auth/profile:
     get:
       tags: [Auth]
@@ -200,17 +314,33 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  message: { type: string }
-                  data:
-                    type: object
-                    properties:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: "Ride requested successfully"
+                    data:
                       ride:
-                        $ref: '#/components/schemas/Ride'
+                        _id: "650a1f9e5d1b3c2a4b6e7f8c"
+                        riderId:
+                          _id: "64f0f3b3a1e2c0b8d6e4f7a1"
+                          name: "Test User"
+                          phone: "+1234567890"
+                        pickupLocation:
+                          address: "123 Pickup St"
+                          latitude: 12.34
+                          longitude: 56.78
+                        destination:
+                          address: "456 Destination Ave"
+                          latitude: 12.35
+                          longitude: 56.79
+                        distance: 2.34
+                        fare: 85.1
+                        status: "requested"
+                        requestedAt: "2025-12-24T12:10:00.000Z"
         '400':
-          $ref: '#/components/schemas/ErrorResponse'
+          $ref: '#/components/schemas/ErrorResponse' 
   /api/v1/rides/me:
     get:
       tags: [Rides]
@@ -292,17 +422,50 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success: { type: boolean }
-                  message: { type: string }
-                  data:
-                    type: object
-                    properties:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: "Available rides retrieved successfully"
+                    data:
                       rides:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Ride'
+                        - _id: "650a1f9e5d1b3c2a4b6e7f8c"
+                          riderId:
+                            _id: "64f0f3b3a1e2c0b8d6e4f7a1"
+                            name: "Test Rider"
+                            phone: "+1234567890"
+                          pickupLocation:
+                            address: "123 Pickup St"
+                            latitude: 12.34
+                            longitude: 56.78
+                          destination:
+                            address: "456 Destination Ave"
+                            latitude: 12.35
+                            longitude: 56.79
+                          distance: 2.34
+                          fare: 85.1
+                          status: "requested"
+                          requestedAt: "2025-12-24T12:10:00.000Z"
+                          distanceFromDriver: 1.42
+                        - _id: "650a2f9e5d1b3c2a4b6e7f90"
+                          riderId:
+                            _id: "64f0f3b3a1e2c0b8d6e4f7a2"
+                            name: "Another Rider"
+                            phone: "+1987654321"
+                          pickupLocation:
+                            address: "789 Pickup Ln"
+                            latitude: 12.36
+                            longitude: 56.80
+                          destination:
+                            address: "321 Destination Rd"
+                            latitude: 12.37
+                            longitude: 56.82
+                          distance: 3.14
+                          fare: 97.1
+                          status: "requested"
+                          requestedAt: "2025-12-24T12:05:00.000Z"
+                          distanceFromDriver: 2.05 
   /api/v1/rides/{rideId}/accept:
     post:
       tags: [Rides]
@@ -379,6 +542,27 @@ paths:
       responses:
         '200':
           description: Earnings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: "Earnings retrieved successfully"
+                    data:
+                      totalEarnings: 1200.5
+                      periodEarnings: 150.25
+                      totalRides: 200
+                      periodRides: 3
+                      rides:
+                        - _id: "650a1f9e5d1b3c2a4b6e7f8c"
+                          fare: 50.25
+                          completedAt: "2025-12-20T09:00:00.000Z"
+                        - _id: "650b1f9e5d1b3c2a4b6e7f9d"
+                          fare: 100.0
+                          completedAt: "2025-12-22T14:30:00.000Z" 
   /api/v1/drivers/location:
     patch:
       tags: [Drivers]
@@ -447,3 +631,23 @@ paths:
       responses:
         '200':
           description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: "Dashboard statistics retrieved successfully"
+                    data:
+                      stats:
+                        totalUsers: 1500
+                        totalDrivers: 300
+                        totalRides: 4500
+                        completedRides: 4200
+                        activeRides: 12
+                        totalRevenue: 123456.78
+                        pendingDriverApprovals: 4
+                        averageRidesPerDay: 140
+                        rideCompletionRate: 93.3
