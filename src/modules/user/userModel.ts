@@ -179,9 +179,8 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
 };
 
 // Create indexes
-userSchema.index({ email: 1 });
-userSchema.index({ phone: 1 });
-driverSchema.index({ userId: 1 });
+// Note: unique indexes are declared on the fields above (e.g., `unique: true`).
+// Avoid duplicate index definitions to prevent Mongoose warnings.
 driverSchema.index({ approvalStatus: 1 });
 driverSchema.index({ status: 1 });
 

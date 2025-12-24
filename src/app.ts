@@ -23,11 +23,9 @@ connectDatabase().catch((error) => {
 });
 
 app.use(helmet());
-// CORS configuration - allow all origins in production, configure specific origins in .env
+// CORS configuration - allow all origins by default; set `CORS_ORIGIN` to a comma-separated list to restrict
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN 
-    ? process.env.CORS_ORIGIN.split(',') 
-    : (process.env.NODE_ENV === 'production' ? true : 'http://localhost:3000'),
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
   credentials: true
 };
 app.use(cors(corsOptions));

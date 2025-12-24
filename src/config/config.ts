@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+// Debug: show whether MONGODB_URI is loaded (do not print secret value)
+console.log('🔐 MONGODB_URI (env):', process.env.MONGODB_URI ? '[SET]' : '[NOT SET]');
+
 export const config = {
   port: process.env.PORT || 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
