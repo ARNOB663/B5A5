@@ -1,0 +1,449 @@
+openapi: 3.0.3
+info:
+  title: Ride Booking API
+  version: 1.0.0
+  description: OpenAPI specification for Ride Booking backend
+servers:
+  - url: https://rideshare1.vercel.app
+    description: Production
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+        error:
+          type: string
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [admin, rider, driver]
+        isBlocked:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    TokenResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        token:
+          type: string
+    Location:
+      type: object
+      properties:
+        address:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+    Ride:
+      type: object
+      properties:
+        _id:
+          type: string
+        riderId:
+          $ref: '#/components/schemas/User'
+        driverId:
+          $ref: '#/components/schemas/User'
+        pickupLocation:
+          $ref: '#/components/schemas/Location'
+        destination:
+          $ref: '#/components/schemas/Location'
+        distance:
+          type: number
+        fare:
+          type: number
+        status:
+          type: string
+        requestedAt:
+          type: string
+          format: date-time
+    PaginatedRides:
+      type: object
+      properties:
+        rides:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ride'
+        pagination:
+          type: object
+          properties:
+            currentPage:
+              type: integer
+            totalPages:
+              type: integer
+            totalRides:
+              type: integer
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+                phone: { type: string }
+                role: { type: string, enum: [admin, rider, driver] }
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  data: { $ref: '#/components/schemas/TokenResponse' }
+        '400':
+          $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  data: { $ref: '#/components/schemas/TokenResponse' }
+        '401':
+          $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/auth/profile:
+    get:
+      tags: [Auth]
+      summary: Get profile of authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/rides/request:
+    post:
+      tags: [Rides]
+      summary: Request a ride (rider)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pickupLocation:
+                  $ref: '#/components/schemas/Location'
+                destination:
+                  $ref: '#/components/schemas/Location'
+      responses:
+        '201':
+          description: Ride requested
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      ride:
+                        $ref: '#/components/schemas/Ride'
+        '400':
+          $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/rides/me:
+    get:
+      tags: [Rides]
+      summary: Get ride history for current user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        '200':
+          description: Rides list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRides'
+  /api/v1/rides/current:
+    get:
+      tags: [Rides]
+      summary: Get current active ride (if any)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Active ride
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      ride:
+                        $ref: '#/components/schemas/Ride'
+        '404': { $ref: '#/components/schemas/ErrorResponse' }
+  /api/v1/rides/{rideId}/rate:
+    post:
+      tags: [Rides]
+      summary: Rate a completed ride (rider)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: rideId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating: { type: number, minimum: 1, maximum: 5 }
+                feedback: { type: string }
+      responses:
+        '200':
+          description: Ride rated
+          content: { application/json: { schema: { type: object } } }
+  /api/v1/rides/available:
+    get:
+      tags: [Rides]
+      summary: Get available rides (driver)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of available rides
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      rides:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Ride'
+  /api/v1/rides/{rideId}/accept:
+    post:
+      tags: [Rides]
+      summary: Accept a ride (driver)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: rideId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Ride accepted
+          content:
+            application/json:
+              schema: { type: object }
+  /api/v1/rides/{rideId}/status:
+    patch:
+      tags: [Rides]
+      summary: Update ride status (driver)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: rideId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string }
+      responses:
+        '200': { description: 'Ride updated' }
+  /api/v1/drivers/availability:
+    patch:
+      tags: [Drivers]
+      summary: Set driver availability
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string }
+                location:
+                  type: object
+                  properties:
+                    latitude: { type: number }
+                    longitude: { type: number }
+      responses:
+        '200':
+          description: Availability updated
+  /api/v1/drivers/earnings:
+    get:
+      tags: [Drivers]
+      summary: Get driver earnings
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema: { type: string }
+        - in: query
+          name: endDate
+          schema: { type: string }
+      responses:
+        '200':
+          description: Earnings
+  /api/v1/drivers/location:
+    patch:
+      tags: [Drivers]
+      summary: Update driver location
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                latitude: { type: number }
+                longitude: { type: number }
+      responses:
+        '200':
+          description: Location updated
+  /api/v1/admin/users:
+    get:
+      tags: [Admin]
+      summary: List users
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: role
+          schema: { type: string }
+      responses:
+        '200':
+          description: Users list
+  /api/v1/admin/drivers:
+    get:
+      tags: [Admin]
+      summary: List drivers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Drivers list
+  /api/v1/admin/rides:
+    get:
+      tags: [Admin]
+      summary: List rides
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Rides list
+  /api/v1/admin/dashboard/stats:
+    get:
+      tags: [Admin]
+      summary: Dashboard stats
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Stats
