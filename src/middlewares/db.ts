@@ -2,10 +2,20 @@ import mongoose from 'mongoose';
 import { Request, Response, NextFunction } from 'express';
 import { ResponseHelper } from '../utils/response';
 
-export const ensureDbConnected = (req: Request, res: Response, next: NextFunction): void => {
-  if (mongoose.connection.readyState !== 1) {
-    ResponseHelper.error(res, 'Service unavailable: database not connected', 503);
-    return;
+import { connectDatabase } from '../config/database';
+
+export const ensureDbConnected = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  // If already connected, proceed immediately
+  if (mongoose.connection.readyState === 1) {
+    return next();
   }
-  next();
+
+  try {
+    // Attempt to connect if not ready
+    await connectDatabase();
+    next();
+  } catch (error) {
+    console.error('Database connection failed in middleware:', error);
+    ResponseHelper.error(res, 'Service unavailable: database connection failed', 503);
+  }
 };

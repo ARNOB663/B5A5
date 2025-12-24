@@ -18,15 +18,13 @@ dotenv.config();
 
 const app = express();
 
-// Connect to database (async, but don't block serverless startup)
-connectDatabase().catch((error) => {
-  console.error('Failed to connect to database:', error);
-});
+// Connect to database logic moved to middleware for serverless environment
+// connectDatabase calls are now handled in ensureDbConnected middleware
 
 app.use(helmet());
 // CORS configuration - allow all origins by default; set `CORS_ORIGIN` to a comma-separated list to restrict
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
+  origin: process.env.CORS_ORIGIN === '*' ? true : (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true),
   credentials: true
 };
 app.use(cors(corsOptions));
@@ -107,6 +105,6 @@ if (config.vercel !== '1') {
       console.log(`🌍 Environment: ${config.nodeEnv}`);
     }
   });
-} 
+}
 
 export default app;

@@ -10,6 +10,9 @@
     "jwt",
     "typescript"
   ],
+  "engines": {
+    "node": "18.x"
+  },
   "homepage": "https://github.com/ARNOB663/B5A5#readme",
   "bugs": {
     "url": "https://github.com/ARNOB663/B5A5/issues"
