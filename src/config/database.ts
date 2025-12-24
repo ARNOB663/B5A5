@@ -20,7 +20,15 @@ export const connectDatabase = async (): Promise<typeof mongoose> => {
       bufferCommands: false,
     };
 
-    console.log('🔗 Connecting to MongoDB...');
+    // Sanitize and log the URI for debugging
+    const sanitizeUri = (uri: string) => {
+      try {
+        return uri.replace(/(mongodb(?:\+srv)?:\/\/[^:]+:)([^@]+)(@.*)/, '$1*****$3');
+      } catch {
+        return 'Check env vars';
+      }
+    };
+    console.log(`🔗 Connecting to MongoDB: ${sanitizeUri(config.mongodbUri)}`);
 
     if (!config.mongodbUri) {
       throw new Error('MONGODB_URI is not defined in environment variables');
