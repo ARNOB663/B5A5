@@ -11,7 +11,7 @@
     "typescript"
   ],
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   },
   "homepage": "https://github.com/ARNOB663/B5A5#readme",
   "bugs": {
