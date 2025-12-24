@@ -35,7 +35,15 @@ export const connectDatabase = async (): Promise<void> => {
       // ignore
     }
 
-    await mongoose.connect(config.mongodbUri);
+    await mongoose.connect(config.mongodbUri, {
+      bufferCommands: false, // Turn off command buffering
+      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      // Additional options for serverless robustness
+      maxPoolSize: 1, // Maintain up to 1 socket connection
+      minPoolSize: 1, // Ensure at least 1 socket connection is open
+      maxIdleTimeMS: 10000, // Close sockets after 10 seconds of inactivity
+    });
     cachedConnection = mongoose;
     console.log('✅ MongoDB connected successfully');
   } catch (error) {
@@ -44,7 +52,7 @@ export const connectDatabase = async (): Promise<void> => {
     if ((process.env.VERCEL !== '1') && (process.env.vercel !== '1')) {
       process.exit(1);
     }
-    throw error; 
+    throw error;
   }
 };
 
