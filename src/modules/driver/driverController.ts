@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { Driver } from '../user/userModel';
 import { ResponseHelper, asyncHandler } from '../../utils/response';
 import { DriverStatus, DriverApprovalStatus } from '../../utils/types';
+import { emitToAll } from '../../socket';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -106,5 +107,53 @@ export const updateLocation = asyncHandler(async (req: AuthRequest, res: Respons
     return;
   }
 
+  // Emit location update
+  emitToAll('driver:location_update', {
+    driverId: userId,
+    location: driver.currentLocation
+  });
+
   ResponseHelper.success(res, 'Location updated successfully', { location: driver.currentLocation });
+});
+
+export const getDriverReviews = asyncHandler(async (req: Request, res: Response): Promise<void> => {
+  const { driverId } = req.params;
+
+  // Import Ride model
+  const { Ride } = await import('../ride/rideModel');
+
+  const reviews = await Ride.find({
+    driverId,
+    rating: { $exists: true, $ne: null }
+  })
+    .populate('riderId', 'name')
+    .select('rating feedback createdAt')
+    .sort({ createdAt: -1 });
+
+  ResponseHelper.success(res, 'Driver reviews retrieved successfully', { reviews });
+});
+
+export const updateVehicleInfo = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  const { vehicleInfo } = req.body;
+  const userId = req.user._id;
+
+  const driver = await Driver.findOne({ userId });
+
+  if (!driver) {
+    ResponseHelper.error(res, 'Driver profile not found', 404);
+    return;
+  }
+
+  // Update allowed fields
+  if (vehicleInfo) {
+    if (vehicleInfo.make) driver.vehicleInfo.make = vehicleInfo.make;
+    if (vehicleInfo.model) driver.vehicleInfo.model = vehicleInfo.model;
+    if (vehicleInfo.year) driver.vehicleInfo.year = vehicleInfo.year;
+    if (vehicleInfo.plateNumber) driver.vehicleInfo.plateNumber = vehicleInfo.plateNumber;
+    if (vehicleInfo.color) driver.vehicleInfo.color = vehicleInfo.color;
+  }
+
+  await driver.save();
+
+  ResponseHelper.success(res, 'Vehicle info updated successfully', { driver });
 });

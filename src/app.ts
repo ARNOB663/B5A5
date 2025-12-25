@@ -1,4 +1,6 @@
 import express from 'express';
+import { createServer } from 'http';
+import { initSocket } from './socket';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -99,7 +101,12 @@ app.use(globalErrorHandler);
 // Only start server if not in Vercel environment
 if (config.vercel !== '1') {
   const PORT = config.port || 3000;
-  app.listen(PORT, () => {
+  const httpServer = createServer(app);
+
+  // Initialize Socket.io
+  initSocket(httpServer);
+
+  httpServer.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
     if (config.nodeEnv) {
       console.log(`🌍 Environment: ${config.nodeEnv}`);

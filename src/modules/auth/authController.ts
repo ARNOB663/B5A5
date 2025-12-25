@@ -11,7 +11,7 @@ interface AuthRequest extends Request {
 
 const generateToken = (userId: string): string => {
   return (jwt as any).sign(
-    { userId }, 
+    { userId },
     config.jwtSecret,
     { expiresIn: config.jwtExpiresIn }
   );
@@ -117,6 +117,55 @@ export const getProfile = asyncHandler(async (req: AuthRequest, res: Response) =
   }
 
   ResponseHelper.success(res, 'Profile retrieved successfully', { user: profile });
+});
+
+export const updateProfile = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { name, email, phone } = req.body;
+  const userId = req.user._id;
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    ResponseHelper.error(res, 'User not found', 404);
+    return;
+  }
+
+  // Check uniqueness if email or phone is being changed
+  if (email && email !== user.email) {
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      ResponseHelper.error(res, 'Email already in use', 400);
+      return;
+    }
+    user.email = email;
+  }
+
+  if (phone && phone !== user.phone) {
+    const existingPhone = await User.findOne({ phone });
+    if (existingPhone) {
+      ResponseHelper.error(res, 'Phone number already in use', 400);
+      return;
+    }
+    user.phone = phone;
+  }
+
+  if (name) {
+    user.name = name;
+  }
+
+  await user.save();
+
+  ResponseHelper.success(res, 'Profile updated successfully', {
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      isBlocked: user.isBlocked,
+      createdAt: user.createdAt
+    }
+  });
 });
 
 export const registerDriver = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {

@@ -35,7 +35,7 @@ router.post('/:rideId/rate', authorize(UserRole.RIDER), validate(rateRideValidat
 
 
 router.get('/available', authorize(UserRole.DRIVER), getAvailableRides);
-router.post('/:rideId/accept', authorize(UserRole.DRIVER), acceptRide);
-router.patch('/:rideId/status', authorize(UserRole.DRIVER), validate(updateRideStatusValidation), updateRideStatus);
+router.put('/:rideId/accept', authorize(UserRole.DRIVER), acceptRide);
+router.put('/:rideId/status', authorize(UserRole.DRIVER), validate(updateRideStatusValidation), updateRideStatus);
 
 export default router;

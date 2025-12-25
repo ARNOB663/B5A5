@@ -3,6 +3,7 @@ import { Ride } from './rideModel';
 import { Driver } from '../user/userModel';
 import { ResponseHelper, asyncHandler } from '../../utils/response';
 import { RideStatus, DriverStatus, DriverApprovalStatus } from '../../utils/types';
+import { emitToAll, emitToUser } from '../../socket';
 
 interface AuthRequest extends Request {
   user?: any;
@@ -10,14 +11,14 @@ interface AuthRequest extends Request {
 
 
 const calculateFare = (distance: number): number => {
-  const baseFare = 50; 
-  const perKmRate = 15; 
+  const baseFare = 50;
+  const perKmRate = 15;
   return baseFare + (distance * perKmRate);
 };
 
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; 
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -31,7 +32,7 @@ export const requestRide = asyncHandler(async (req: AuthRequest, res: Response):
   const { pickupLocation, destination } = req.body;
   const riderId = req.user._id;
 
-  
+
   const activeRide = await Ride.findOne({
     riderId,
     status: { $in: [RideStatus.REQUESTED, RideStatus.ACCEPTED, RideStatus.PICKED_UP, RideStatus.IN_TRANSIT] }
@@ -50,7 +51,7 @@ export const requestRide = asyncHandler(async (req: AuthRequest, res: Response):
   );
   const fare = calculateFare(distance);
 
-  
+
   const ride = await Ride.create({
     riderId,
     pickupLocation,
@@ -61,6 +62,9 @@ export const requestRide = asyncHandler(async (req: AuthRequest, res: Response):
   });
 
   const populatedRide = await Ride.findById(ride._id).populate('riderId', 'name phone');
+
+  // Emit ride request to nearby drivers (simplification: emit to all for now, or filter by location in real app)
+  emitToAll('ride:request', populatedRide);
 
   ResponseHelper.success(res, 'Ride requested successfully', { ride: populatedRide }, 201);
 });
@@ -193,7 +197,7 @@ export const getAvailableRides = asyncHandler(async (req: AuthRequest, res: Resp
     }).sort((a: any, b: any) => a.distanceFromDriver - b.distanceFromDriver);
   }
 
-  ResponseHelper.success(res, 'Available rides retrieved successfully', { 
+  ResponseHelper.success(res, 'Available rides retrieved successfully', {
     rides: ridesWithDistance.slice(0, 20) // Return top 20 closest rides
   });
 });
@@ -247,6 +251,10 @@ export const acceptRide = asyncHandler(async (req: AuthRequest, res: Response): 
     { userId: driverId },
     { status: DriverStatus.BUSY }
   );
+
+  // Emit ride accepted event to rider
+  emitToUser(ride.riderId._id.toString(), 'ride:accepted', ride);
+
 
   ResponseHelper.success(res, 'Ride accepted successfully', { ride });
 });
@@ -306,6 +314,15 @@ export const updateRideStatus = asyncHandler(async (req: AuthRequest, res: Respo
   const populatedRide = await Ride.findById(ride._id)
     .populate('riderId', 'name phone')
     .populate('driverId', 'name phone');
+
+  // Emit status change to authorized parties
+  // Emit status change to authorized parties
+  if (ride.riderId) {
+    emitToUser(ride.riderId.toString(), 'ride:status_change', populatedRide);
+  }
+  if (ride.driverId) {
+    emitToUser(ride.driverId.toString(), 'ride:status_change', populatedRide);
+  }
 
   ResponseHelper.success(res, 'Ride status updated successfully', { ride: populatedRide });
 });
